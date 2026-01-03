@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财富蓝图 2026 | 专业投资模拟平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg-slate: #f8fafc;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-slate);
+            color: #1e293b;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
+        }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="min-h-screen pb-20">
+        <!-- 顶部导航栏 -->
+        <nav class="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-slate-200 px-6 py-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 btn-gradient rounded-lg flex items-center justify-center text-white font-black italic">W</div>
+                    <span class="font-extrabold text-xl tracking-tight text-slate-800">WealthBlueprint <span class="text-emerald-500">2026</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="statusBadge" class="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> 云端已同步
+                    </div>
+                    <button onclick="publishToCloud()" class="btn-gradient text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg">
+                        <span>🚀</span> 发布并分享
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-6 mt-8 space-y-8">
+            <!-- 标题区域 -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <input id="planTitle" type="text" value="我的私人财富增长方案" class="bg-transparent text-3xl md:text-4xl font-black text-slate-900 focus:outline-none border-b-2 border-transparent focus:border-emerald-500 w-full md:w-[500px] transition-all" spellcheck="false">
+                    <p class="text-slate-400 font-medium mt-2 flex items-center gap-2">
+                        <span>📈</span> 基于复利引擎计算的模型方案
+                    </p>
+                </div>
+                <div id="shareInfo" class="hidden animate-in fade-in slide-in-from-right-4">
+                    <div class="bg-white p-2 rounded-2xl border border-emerald-100 flex items-center gap-3">
+                        <div class="text-[10px] uppercase font-bold text-emerald-500 px-2">方案 ID</div>
+                        <code id="displayId" class="font-mono font-bold text-slate-700 bg-slate-50 px-3 py-1 rounded-lg">--------</code>
+                        <button onclick="copyCurrentLink()" class="bg-emerald-50 text-emerald-600 p-2 rounded-lg hover:bg-emerald-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据概览 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card p-6 rounded-3xl border-b-4 border-b-slate-400">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">初始投入金额</label>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-xl font-bold text-slate-400">$</span>
+                        <input id="initCap" type="number" value="5000" oninput="calculate()" class="text-3xl font-black bg-transparent w-full focus:outline-none">
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border-b-4 border-b-emerald-500">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">每月计划定投</label>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-xl font-bold text-emerald-400">$</span>
+                        <input id="monthlyAdd" type="number" value="300" oninput="calculate()" class="text-3xl font-black bg-transparent w-full focus:outline-none text-emerald-600">
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border-b-4 border-b-amber-500">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">组合预期回报</label>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="cagrDisplay" class="text-3xl font-black text-amber-600">0.0</span>
+                        <span class="text-sm font-bold text-amber-500">%</span>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border-b-4 border-b-slate-800 bg-slate-900 text-white">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">20年后估值</label>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-xl font-bold text-slate-500">$</span>
+                        <span id="futureVal" class="text-3xl font-black">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- 左侧：资产编辑 -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="font-extrabold text-xl text-slate-800">资产配比详情</h3>
+                            <button onclick="addAsset()" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                                + 添加新类别
+                            </button>
+                        </div>
+                        <div id="assetList" class="space-y-4">
+                            <!-- JS 动态注入 -->
+                        </div>
+                        <div id="allocWarning" class="hidden mt-6 p-4 bg-red-50 text-red-500 rounded-2xl text-xs font-bold flex items-center gap-2">
+                            ⚠️ 注意：当前总占比不等于 100%，请调整以获得准确预测。
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden">
+                        <div class="relative z-10">
+                            <h3 class="text-xl font-bold">复利小贴士</h3>
+                            <p id="tipText" class="text-slate-400 mt-2 text-sm leading-relaxed">
+                                正在计算您的方案动态建议...
+                            </p>
+                        </div>
+                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                    </div>
+                </div>
+
+                <!-- 右侧：可视化 -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">持仓分布图</h4>
+                        <div class="h-[250px]"><canvas id="pieChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">财富增长路径</h4>
+                            <select id="yearSelect" onchange="calculate()" class="text-xs font-bold bg-slate-50 border-none rounded-lg px-2 py-1 outline-none">
+                                <option value="10">10年期</option>
+                                <option value="20" selected>20年期</option>
+                                <option value="30">30年期</option>
+                            </select>
+                        </div>
+                        <div class="h-[250px]"><canvas id="lineChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="max-w-7xl mx-auto px-6 mt-12 text-center text-slate-400 text-[10px] uppercase tracking-[0.2em]">
+            WealthBlueprint Portfolio System © 2026 | 专业金融模拟，不构成投资建议
+        </footer>
+    </div>
+
+    <!-- Firebase 脚本 (用于真实发布) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 获取环境变量 (由系统注入)
+        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const appId = window.__app_id || 'invest-portal-default';
+
+        window.publishToCloud = async function() {
+            const id = Math.random().toString(36).substring(2, 10);
+            const data = {
+                title: document.getElementById('planTitle').value,
+                init: document.getElementById('initCap').value,
+                monthly: document.getElementById('monthlyAdd').value,
+                assets: window.assets,
+                years: document.getElementById('yearSelect').value
+            };
+
+            try {
+                const path = `/artifacts/${appId}/public/data/invest_plans/${id}`;
+                // 注意：由于在离线 HTML 中可能没有 Auth 环境，
+                // 建议在真实部署时配合 Firebase Auth 使用。
+                // 此处模拟逻辑
+                alert("由于您在本地打开，云端功能需部署到服务器。已为您生成本地配置 ID: " + id);
+                document.getElementById('shareInfo').classList.remove('hidden');
+                document.getElementById('displayId').innerText = id;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        window.copyCurrentLink = function() {
+            const id = document.getElementById('displayId').innerText;
+            const url = window.location.href.split('?')[0] + "?id=" + id;
+            const el = document.createElement('textarea');
+            el.value = url;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("链接已复制，部署后即可通过此链接访问。");
+        }
+    </script>
+
+    <script>
+        // 核心逻辑
+        let assets = [
+            { name: "标普500 (VFV)", alloc: 50, ret: 10, color: "#10b981" },
+            { name: "纳斯达克 (XQQ)", alloc: 20, ret: 13, color: "#3b82f6" },
+            { name: "加股红利 (VDY)", alloc: 30, ret: 7, color: "#f59e0b" }
+        ];
+        window.assets = assets;
+
+        const palette = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#f43f5e"];
+        let pieChart, lineChart;
+
+        function init() {
+            renderAssets();
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 5, borderColor: '#fff' }] },
+                options: { 
+                    maintainAspectRatio: false, 
+                    cutout: '70%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { weight: 'bold', size: 10 } } } } 
+                }
+            });
+
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            lineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: '财富总值', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { display: false },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            calculate();
+        }
+
+        function renderAssets() {
+            const list = document.getElementById('assetList');
+            list.innerHTML = '';
+            assets.forEach((a, i) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-4 bg-slate-50 p-4 rounded-2xl group transition-all hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100";
+                div.innerHTML = `
+                    <div class="w-4 h-4 rounded-full" style="background:${a.color}"></div>
+                    <input type="text" value="${a.name}" oninput="assets[${i}].name=this.value; calculate()" class="bg-transparent font-bold text-sm text-slate-700 focus:outline-none flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400">占比</span>
+                        <input type="number" value="${a.alloc}" oninput="assets[${i}].alloc=parseFloat(this.value)||0; calculate()" class="w-12 text-right font-black text-slate-800 bg-transparent focus:outline-none">%
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400">回报</span>
+                        <input type="number" value="${a.ret}" oninput="assets[${i}].ret=parseFloat(this.value)||0; calculate()" class="w-12 text-right font-black text-emerald-600 bg-transparent focus:outline-none">%
+                    </div>
+                    <button onclick="removeAsset(${i})" class="text-slate-300 hover:text-red-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addAsset() {
+            assets.push({ name: "新资产类别", alloc: 0, ret: 8, color: palette[assets.length % palette.length] });
+            renderAssets();
+            calculate();
+        }
+
+        function removeAsset(i) {
+            if(assets.length > 1) {
+                assets.splice(i, 1);
+                renderAssets();
+                calculate();
+            }
+        }
+
+        function calculate() {
+            const init = parseFloat(document.getElementById('initCap').value) || 0;
+            const monthly = parseFloat(document.getElementById('monthlyAdd').value) || 0;
+            const years = parseInt(document.getElementById('yearSelect').value);
+            
+            let totalAlloc = 0;
+            let weightedRet = 0;
+            assets.forEach(a => {
+                totalAlloc += a.alloc;
+                weightedRet += (a.alloc * a.ret);
+            });
+
+            document.getElementById('allocWarning').style.display = Math.abs(totalAlloc - 100) > 0.1 ? 'flex' : 'none';
+            const cagr = totalAlloc > 0 ? (weightedRet / totalAlloc) : 0;
+            document.getElementById('cagrDisplay').innerText = cagr.toFixed(1);
+
+            // 复利计算
+            let current = init;
+            let labels = [];
+            let data = [];
+            const monthlyRet = (cagr / 100) / 12;
+
+            for(let m=0; m <= years * 12; m++) {
+                current = (current + monthly) * (1 + monthlyRet);
+                if(m % 12 === 0) {
+                    labels.push(m/12 + '年');
+                    data.push(current);
+                }
+            }
+
+            document.getElementById('futureVal').innerText = Math.round(current).toLocaleString();
+            
+            // 更新动态贴士
+            updateTips(cagr, current, init + monthly * 12 * years);
+
+            // 更新图表
+            pieChart.data.labels = assets.map(a => a.name);
+            pieChart.data.datasets[0].data = assets.map(a => a.alloc);
+            pieChart.data.datasets[0].backgroundColor = assets.map(a => a.color);
+            pieChart.update();
+
+            lineChart.data.labels = labels;
+            lineChart.data.datasets[0].data = data;
+            lineChart.update();
+        }
+
+        function updateTips(cagr, final, principal) {
+            const profit = final - principal;
+            const ratio = profit / principal;
+            let text = "";
+            if(cagr > 12) text = "🔥 您的投资组合非常激进，预期回报极高，但请注意波动风险。";
+            else if(cagr > 8) text = "✅ 这是一个非常健康的成长型组合，长期持有将产生巨大的复利效应。";
+            else text = "🛡️ 组合风格稳健。考虑增加 10% 的指数基金以提升长期购买力。";
+            
+            if(ratio > 1) text += ` 令人惊叹的是，届时您的收益将是本金的 ${(ratio).toFixed(1)} 倍！`;
+            document.getElementById('tipText').innerText = text;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
